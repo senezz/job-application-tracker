@@ -11,9 +11,10 @@ export const fetchApplications = async (): Promise<Application[]> => {
 };
 
 export const createApplication = async (dto: CreateApplicationDTO): Promise<Application> => {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('applications')
-    .insert(dto)
+    .insert({ ...dto, user_id: user!.id })
     .select()
     .single();
   if (error) throw error;
