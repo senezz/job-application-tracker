@@ -45,8 +45,8 @@ export function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        setInfo('Check your email to confirm your account, then sign in.');
         reset('signin');
+        setInfo('Check your email to confirm your account, then sign in.');
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
