@@ -15,8 +15,12 @@ export function StatsCards({ stats }: Props) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map(card => (
-        <Card key={card.label} className="bg-card border-border">
+      {cards.map((card, i) => (
+        <Card
+          key={card.label}
+          className="bg-card border-border anim-fade-up"
+          style={{ animationDelay: `${i * 70}ms` }}
+        >
           <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
           </CardHeader>

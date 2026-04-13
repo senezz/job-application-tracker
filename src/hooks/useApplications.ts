@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchApplications,
   createApplication,
+  updateApplication,
   updateApplicationStatus,
   deleteApplication,
 } from '../lib/api/applications';
-import type { Application, CreateApplicationDTO } from '../types';
+import type { Application, CreateApplicationDTO, UpdateApplicationDTO } from '../types';
 
 const QUERY_KEY = ['applications'];
 
@@ -14,6 +15,15 @@ export const useApplications = () =>
     queryKey: QUERY_KEY,
     queryFn: fetchApplications,
   });
+
+export const useUpdateApplication = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateApplicationDTO }) =>
+      updateApplication(id, dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+};
 
 export const useCreateApplication = () => {
   const qc = useQueryClient();

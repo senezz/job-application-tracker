@@ -12,6 +12,8 @@ export interface Application {
   role: string;
   status: ApplicationStatus;
   applied_date: string;
+  url: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +23,17 @@ export interface CreateApplicationDTO {
   role: string;
   status: ApplicationStatus;
   applied_date: string;
+  url?: string;
+  notes?: string;
+}
+
+export interface UpdateApplicationDTO {
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+  applied_date: string;
+  url?: string;
+  notes?: string;
 }
 
 export interface DashboardStats {
