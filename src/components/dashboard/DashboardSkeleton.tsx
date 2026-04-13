@@ -76,7 +76,7 @@ export function DashboardSkeleton() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex gap-1">
             {[72, 60, 72, 48].map((w, i) => (
-              <Skeleton key={i} className="h-8 rounded-md" style={{ width: w }} />
+              <div key={i} style={{ width: `${w}px` }}><Skeleton className="h-8 w-full rounded-md" /></div>
             ))}
           </div>
           <Skeleton className="h-8 w-48 rounded-md" />
