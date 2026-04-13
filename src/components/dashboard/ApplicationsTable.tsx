@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Pencil, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Pencil, ChevronsUpDown, ChevronUp, ChevronDown, SearchX } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -160,8 +160,20 @@ export function ApplicationsTable({ apps }: Props) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
-                  No applications found
+                <TableCell colSpan={5}>
+                  <div className="flex flex-col items-center justify-center py-12 text-center anim-fade-in">
+                    <SearchX size={32} className="text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">No results found</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1 mb-4">
+                      Try adjusting your search or filters.
+                    </p>
+                    <button
+                      onClick={() => { setSearch(''); setTab('all'); }}
+                      className="text-xs text-foreground underline underline-offset-2 hover:opacity-70 transition-opacity"
+                    >
+                      Clear filters
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (

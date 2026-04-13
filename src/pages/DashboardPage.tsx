@@ -5,6 +5,8 @@ import { StatsCards } from '../components/dashboard/StatsCards';
 import { ActivityChart } from '../components/dashboard/ActivityChart';
 import { StatusChart } from '../components/dashboard/StatusChart';
 import { ApplicationsTable } from '../components/dashboard/ApplicationsTable';
+import { DashboardSkeleton } from '../components/dashboard/DashboardSkeleton';
+import { EmptyState } from '../components/dashboard/EmptyState';
 import { AddApplicationForm } from '../components/forms/AddApplicationForm';
 import { Button } from '@/components/ui/button';
 import { useApplications } from '../hooks/useApplications';
@@ -25,20 +27,21 @@ export function DashboardPage() {
           style={{ animationDelay: '80ms' }}
         >
           <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-          <Button onClick={() => setFormOpen(true)} className="gap-2 transition-transform active:scale-95">
-            <Plus size={16} />
-            Add application
-          </Button>
+          {!isLoading && apps.length > 0 && (
+            <Button onClick={() => setFormOpen(true)} className="gap-2 transition-transform active:scale-95">
+              <Plus size={16} />
+              Add application
+            </Button>
+          )}
         </header>
 
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-8 py-6">
           {isLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm anim-fade-in">
-              <span className="inline-block w-4 h-4 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
-              Loading…
-            </div>
+            <DashboardSkeleton />
+          ) : apps.length === 0 ? (
+            <EmptyState onAdd={() => setFormOpen(true)} />
           ) : (
-            <>
+            <div className="space-y-6">
               <div className="anim-fade-up" style={{ animationDelay: '150ms' }}>
                 <StatsCards stats={stats} />
               </div>
@@ -49,7 +52,7 @@ export function DashboardPage() {
               <div className="anim-fade-up" style={{ animationDelay: '400ms' }}>
                 <ApplicationsTable apps={apps} />
               </div>
-            </>
+            </div>
           )}
         </div>
       </main>
