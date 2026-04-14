@@ -23,10 +23,10 @@ export function DashboardPage() {
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <header
-          className="flex items-center justify-between px-8 py-4 border-b border-border shrink-0 anim-fade-down"
+          className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-border shrink-0 anim-fade-down"
           style={{ animationDelay: '80ms' }}
         >
-          <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-foreground pl-10 md:pl-0">Dashboard</h1>
           {!isLoading && apps.length > 0 && (
             <Button onClick={() => setFormOpen(true)} className="gap-2 transition-transform active:scale-95">
               <Plus size={16} />
@@ -35,7 +35,7 @@ export function DashboardPage() {
           )}
         </header>
 
-        <div className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
           {isLoading ? (
             <DashboardSkeleton />
           ) : apps.length === 0 ? (
@@ -45,7 +45,7 @@ export function DashboardPage() {
               <div className="anim-fade-up" style={{ animationDelay: '150ms' }}>
                 <StatsCards stats={stats} />
               </div>
-              <div className="flex gap-4 anim-fade-up" style={{ animationDelay: '280ms' }}>
+              <div className="flex flex-col md:flex-row gap-4 anim-fade-up" style={{ animationDelay: '280ms' }}>
                 <ActivityChart apps={apps} />
                 <StatusChart apps={apps} />
               </div>

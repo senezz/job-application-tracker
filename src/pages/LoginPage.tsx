@@ -162,7 +162,14 @@ export function LoginPage() {
                 <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
-            <Button variant="outline" className="w-full transition-transform active:scale-[0.98]" onClick={handleGoogleLogin}>
+            <Button variant="outline" className="w-full transition-transform active:scale-[0.98] gap-3" onClick={handleGoogleLogin}>
+              <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M47.532 24.552c0-1.636-.147-3.2-.42-4.704H24.48v8.898h12.99c-.56 3.016-2.26 5.572-4.814 7.286v6.054h7.794c4.558-4.198 7.082-10.38 7.082-17.534z" fill="#4285F4"/>
+                <path d="M24.48 48c6.522 0 11.99-2.162 15.986-5.914l-7.794-6.054c-2.162 1.45-4.926 2.306-8.192 2.306-6.3 0-11.634-4.254-13.538-9.972H2.876v6.244C6.856 42.692 15.12 48 24.48 48z" fill="#34A853"/>
+                <path d="M10.942 28.366A14.434 14.434 0 0 1 9.48 24c0-1.518.26-2.992.714 0z" fill="#FBBC05"/>
+                <path d="M10.942 28.366A14.434 14.434 0 0 1 9.48 24c0-1.518.26-2.992.714-4.366L2.876 13.39A23.952 23.952 0 0 0 .48 24c0 3.874.926 7.538 2.396 10.61l7.794-6.244z" fill="#FBBC05"/>
+                <path d="M24.48 9.656c3.552 0 6.742 1.222 9.254 3.624l6.942-6.942C36.466 2.392 30.998 0 24.48 0 15.12 0 6.856 5.308 2.876 13.39l7.844 6.244c1.904-5.718 7.238-9.978 13.76-9.978z" fill="#EA4335"/>
+              </svg>
               Continue with Google
             </Button>
           </>
