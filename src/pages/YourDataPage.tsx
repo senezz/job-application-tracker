@@ -146,7 +146,6 @@ export function YourDataPage() {
 
     setCvUploading(true);
 
-    // Delete old file if exists
     if (profile.cv_file_path) {
       await supabase.storage.from('cv-files').remove([profile.cv_file_path]);
     }
@@ -163,7 +162,6 @@ export function YourDataPage() {
     setProfile(newProfile);
     setCvPreviewUrl(null);
 
-    // Save immediately
     await supabase.from('user_profiles').upsert({
       id: userId,
       first_name: newProfile.first_name || null,
