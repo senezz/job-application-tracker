@@ -6,10 +6,12 @@ A web app for tracking job applications — statuses, activity charts, and stats
 
 ## Features
 
-- Email & Google OAuth authentication
+- Email & Google OAuth authentication with password reset
 - Dashboard with application stats and charts
-- Add, edit, and filter job applications by status
-- Responsive UI with dark theme
+- Add, edit, and delete job applications
+- Filter applications by status
+- Your Data page with personal info, links, and CV upload
+- Responsive UI with dark/light theme toggle
 
 ## Tech Stack
 
@@ -60,4 +62,3 @@ npm run dev
 ```
 
 App will be available at `http://localhost:5173`.
-
