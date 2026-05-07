@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Copy, Trash2, Check, Download, Eye, Upload, FileText, Loader2 } from 'lucide-react';
+import { Plus, Copy, Trash2, Check, Download, Eye, Upload, FileText, Loader2, Mail } from 'lucide-react';
+import { GmailConnect } from '../components/gmail/GmailConnect';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { Sidebar } from '../components/layout/Sidebar';
@@ -296,6 +297,15 @@ export function YourDataPage() {
                   </button>
                 </div>
               ))}
+            </section>
+
+            {/* Gmail */}
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Mail size={14} className="text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Gmail</h2>
+              </div>
+              <GmailConnect />
             </section>
 
             {/* CV */}
