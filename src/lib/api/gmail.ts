@@ -1,6 +1,3 @@
-const SEARCH_QUERY =
-  'application OR interview OR recruitment OR "thank you for applying" OR position OR candidate';
-
 export interface GmailEmail {
   id: string;
   sender: string;
@@ -12,7 +9,7 @@ export interface GmailEmail {
 
 export async function fetchGmailEmails(accessToken: string): Promise<GmailEmail[]> {
   const listRes = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(SEARCH_QUERY)}&maxResults=50`,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 

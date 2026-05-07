@@ -139,7 +139,7 @@ export function EmailsDialog({ app, open, onClose }: Props) {
               <section className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Recruitment emails from Gmail
+                    Recent emails from Gmail
                   </h3>
                   <button
                     onClick={load}
