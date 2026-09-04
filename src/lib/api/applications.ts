@@ -1,55 +1,31 @@
-import { supabase } from '../supabase';
+import { apiFetch } from './client';
 import type { Application, CreateApplicationDTO, UpdateApplicationDTO } from '../../types';
 
-export const fetchApplications = async (): Promise<Application[]> => {
-  const { data, error } = await supabase
-    .from('applications')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data;
-};
+export const fetchApplications = (): Promise<Application[]> => apiFetch<Application[]>('/jobs');
 
-export const createApplication = async (dto: CreateApplicationDTO): Promise<Application> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from('applications')
-    .insert({ ...dto, user_id: user!.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-};
+export const createApplication = (dto: CreateApplicationDTO): Promise<Application> =>
+  apiFetch<Application>('/jobs', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
 
-export const updateApplication = async (
+export const updateApplication = (
   id: string,
   dto: UpdateApplicationDTO,
-): Promise<Application> => {
-  const { data, error } = await supabase
-    .from('applications')
-    .update({ ...dto, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-};
+): Promise<Application> =>
+  apiFetch<Application>(`/jobs/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dto),
+  });
 
-export const updateApplicationStatus = async (
+export const updateApplicationStatus = (
   id: string,
   status: Application['status'],
-): Promise<void> => {
-  const { error } = await supabase
-    .from('applications')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
-};
+): Promise<void> =>
+  apiFetch(`/jobs/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
 
-export const deleteApplication = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('applications')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
-};
+export const deleteApplication = (id: string): Promise<void> =>
+  apiFetch(`/jobs/${id}`, { method: 'DELETE' });
