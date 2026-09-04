@@ -1,18 +1,10 @@
-import { useEffect, useState } from 'react';
 import { Mail, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '../../lib/supabase';
-import { useGmailConnect } from '../../hooks/useGmail';
+import { useGmailConnect, useGmailStatus } from '../../hooks/useGmail';
 
 export function GmailConnect() {
-  const [connected, setConnected] = useState<boolean | null>(null);
+  const { connected } = useGmailStatus();
   const { connect } = useGmailConnect();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setConnected(!!session?.provider_token);
-    });
-  }, []);
 
   if (connected === null) {
     return <Loader2 size={16} className="animate-spin text-muted-foreground" />;
