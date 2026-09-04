@@ -1,28 +1,36 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { fetchGmailEmails, type GmailEmail } from '../lib/api/gmail';
+import { useState, useCallback, useEffect } from 'react';
+import { getGmailConnectUrl, getGmailStatus, fetchGmailEmails, type GmailEmail } from '../lib/api/gmail';
 
 export type { GmailEmail };
 export type GmailError = 'not_connected' | 'token_expired' | 'scope_missing' | 'failed';
 
 export function useGmailConnect() {
   const connect = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes: 'https://www.googleapis.com/auth/gmail.readonly',
-        redirectTo: `${window.location.origin}/your-data`,
-        queryParams: { access_type: 'offline', prompt: 'consent' },
-      },
-    });
+    const url = await getGmailConnectUrl();
+    window.location.href = url;
   }, []);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.provider_token ?? null;
+    const status = await getGmailStatus().catch(() => ({ connected: false }) as const);
+    return status.connected ? (status as { accessToken?: string }).accessToken ?? null : null;
   }, []);
 
   return { connect, getToken };
+}
+
+export function useGmailStatus() {
+  const [connected, setConnected] = useState<boolean | null>(null);
+
+  const refresh = useCallback(async () => {
+    const status = await getGmailStatus().catch(() => ({ connected: false }) as const);
+    setConnected(status.connected);
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { connected, refresh };
 }
 
 export function useGmailEmails() {

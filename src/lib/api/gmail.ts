@@ -1,3 +1,5 @@
+import { apiFetch } from './client';
+
 export interface GmailEmail {
   id: string;
   sender: string;
@@ -5,6 +7,22 @@ export interface GmailEmail {
   receivedAt: string;
   snippet: string;
   body: string;
+}
+
+export interface GmailStatus {
+  connected: boolean;
+  accessToken?: string;
+  scope?: string;
+  connectedAt?: string;
+}
+
+export async function getGmailConnectUrl(): Promise<string> {
+  const { url } = await apiFetch<{ url: string }>('/gmail/connect');
+  return url;
+}
+
+export async function getGmailStatus(): Promise<GmailStatus> {
+  return apiFetch<GmailStatus>('/gmail/token', { skipAuthRedirect: true });
 }
 
 export async function fetchGmailEmails(accessToken: string): Promise<GmailEmail[]> {

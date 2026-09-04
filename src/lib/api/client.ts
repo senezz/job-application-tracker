@@ -21,15 +21,23 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+interface ApiFetchOptions extends RequestInit {
+  /** Skip the global "clear token + redirect to /login" behavior on 401.
+   * Use for endpoints where a 401 doesn't mean the app session expired
+   * (e.g. /gmail/token, which returns 401 for a revoked Gmail connection). */
+  skipAuthRedirect?: boolean;
+}
+
+export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const { skipAuthRedirect, ...init } = options;
   const token = getToken();
-  const headers = new Headers(options.headers);
+  const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
 
-  if (res.status === 401) {
+  if (res.status === 401 && !skipAuthRedirect) {
     clearToken();
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
