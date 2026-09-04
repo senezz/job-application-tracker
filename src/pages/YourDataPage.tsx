@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Copy, Trash2, Check, Download, Eye, Upload, FileText, Loader2, Mail } from 'lucide-react';
 import { GmailConnect } from '../components/gmail/GmailConnect';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { getProfile, updateProfile, uploadCv, getCvUrl, deleteCv as deleteCvRequest } from '../lib/api/profile';
+import { ApiError } from '../lib/api/client';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,29 +11,26 @@ import { cn } from '@/lib/utils';
 
 interface ProfileLink {
   id: string;
-  label: string;
   url: string;
 }
 
-interface UserProfile {
-  first_name: string;
-  last_name: string;
+interface FormState {
+  fullName: string;
   phone: string;
-  contact_email: string;
   links: ProfileLink[];
-  cv_file_path: string | null;
-  cv_file_name: string | null;
+  cvName: string | null;
 }
 
-const empty: UserProfile = {
-  first_name: '',
-  last_name: '',
+const empty: FormState = {
+  fullName: '',
   phone: '',
-  contact_email: '',
   links: [],
-  cv_file_path: null,
-  cv_file_name: null,
+  cvName: null,
 };
+
+function parseLink(url: string): ProfileLink {
+  return { id: crypto.randomUUID(), url };
+}
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -55,77 +53,60 @@ function CopyButton({ value }: { value: string }) {
 }
 
 export function YourDataPage() {
-  const [profile, setProfile] = useState<UserProfile>(empty);
+  const [profile, setProfile] = useState<FormState>(empty);
+  const [hasCv, setHasCv] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [cvUploading, setCvUploading] = useState(false);
-  const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-
-      const { data } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (data) {
+      try {
+        const data = await getProfile();
         setProfile({
-          first_name: data.first_name ?? '',
-          last_name: data.last_name ?? '',
+          fullName: data.fullName ?? '',
           phone: data.phone ?? '',
-          contact_email: data.contact_email ?? '',
-          links: Array.isArray(data.links) ? data.links : [],
-          cv_file_path: data.cv_file_path ?? null,
-          cv_file_name: data.cv_file_name ?? null,
+          links: data.links.map(parseLink),
+          cvName: data.cvName,
         });
+        setHasCv(Boolean(data.cvKey));
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : 'Failed to load profile');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
   }, []);
 
   const save = async () => {
-    if (!userId) return;
     setSaving(true);
-    const { error } = await supabase
-      .from('user_profiles')
-      .upsert({
-        id: userId,
-        first_name: profile.first_name || null,
-        last_name: profile.last_name || null,
-        phone: profile.phone || null,
-        contact_email: profile.contact_email || null,
-        links: profile.links,
-        cv_file_path: profile.cv_file_path,
-        cv_file_name: profile.cv_file_name,
-        updated_at: new Date().toISOString(),
+    try {
+      await updateProfile({
+        fullName: profile.fullName,
+        phone: profile.phone,
+        links: profile.links.map(l => l.url).filter(Boolean),
       });
-    setSaving(false);
-    if (error) {
-      toast.error('Failed to save: ' + error.message);
-    } else {
       toast.success('Saved successfully');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
     }
   };
 
   const addLink = () => {
     setProfile(p => ({
       ...p,
-      links: [...p.links, { id: crypto.randomUUID(), label: '', url: '' }],
+      links: [...p.links, { id: crypto.randomUUID(), url: '' }],
     }));
   };
 
-  const updateLink = (id: string, field: 'label' | 'url', value: string) => {
+  const updateLink = (id: string, value: string) => {
     setProfile(p => ({
       ...p,
-      links: p.links.map(l => l.id === id ? { ...l, [field]: value } : l),
+      links: p.links.map(l => l.id === id ? { ...l, url: value } : l),
     }));
   };
 
@@ -135,9 +116,15 @@ export function YourDataPage() {
 
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) return;
-    if (file.type !== 'application/pdf') {
-      toast.error('Only PDF files are supported');
+    if (!file) return;
+
+    const allowed = new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]);
+    if (!allowed.has(file.type)) {
+      toast.error('Only PDF, DOC or DOCX files are supported');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -146,77 +133,49 @@ export function YourDataPage() {
     }
 
     setCvUploading(true);
-
-    if (profile.cv_file_path) {
-      await supabase.storage.from('cv-files').remove([profile.cv_file_path]);
-    }
-
-    const path = `${userId}/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from('cv-files').upload(path, file);
-    if (error) {
-      toast.error('Upload failed: ' + error.message);
+    try {
+      const data = await uploadCv(file);
+      setProfile(p => ({ ...p, cvName: data.cvName }));
+      setHasCv(true);
+      toast.success('CV uploaded successfully');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Upload failed');
+    } finally {
       setCvUploading(false);
-      return;
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-
-    const newProfile = { ...profile, cv_file_path: path, cv_file_name: file.name };
-    setProfile(newProfile);
-    setCvPreviewUrl(null);
-
-    await supabase.from('user_profiles').upsert({
-      id: userId,
-      first_name: newProfile.first_name || null,
-      last_name: newProfile.last_name || null,
-      phone: newProfile.phone || null,
-      contact_email: newProfile.contact_email || null,
-      links: newProfile.links,
-      cv_file_path: path,
-      cv_file_name: file.name,
-      updated_at: new Date().toISOString(),
-    });
-
-    setCvUploading(false);
-    toast.success('CV uploaded successfully');
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const downloadCv = async () => {
-    if (!profile.cv_file_path) return;
-    const { data, error } = await supabase.storage.from('cv-files').download(profile.cv_file_path);
-    if (error || !data) { toast.error('Download failed'); return; }
-    const url = URL.createObjectURL(data);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = profile.cv_file_name ?? 'cv.pdf';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const { url } = await getCvUrl();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = profile.cvName ?? 'cv';
+      a.click();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Download failed');
+    }
   };
 
   const previewCv = async () => {
-    if (!profile.cv_file_path) return;
-    if (cvPreviewUrl) {
-      window.open(cvPreviewUrl, '_blank');
-      return;
+    try {
+      const { url } = await getCvUrl();
+      window.open(url, '_blank');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Preview failed');
     }
-    const { data, error } = await supabase.storage.from('cv-files').download(profile.cv_file_path);
-    if (error || !data) { toast.error('Preview failed'); return; }
-    const url = URL.createObjectURL(data);
-    setCvPreviewUrl(url);
-    window.open(url, '_blank');
   };
 
   const deleteCv = async () => {
-    if (!profile.cv_file_path || !userId) return;
-    await supabase.storage.from('cv-files').remove([profile.cv_file_path]);
-    const newProfile = { ...profile, cv_file_path: null, cv_file_name: null };
-    setProfile(newProfile);
-    setCvPreviewUrl(null);
-    await supabase.from('user_profiles').upsert({
-      id: userId,
-      ...newProfile,
-      updated_at: new Date().toISOString(),
-    });
-    toast.success('CV removed');
+    try {
+      await deleteCvRequest();
+      setProfile(p => ({ ...p, cvName: null }));
+      setHasCv(false);
+      toast.success('CV removed');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to remove CV');
+    }
   };
 
   if (loading) {
@@ -253,10 +212,8 @@ export function YourDataPage() {
             {/* Personal info */}
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Personal Info</h2>
-              <Field label="First name" value={profile.first_name} onChange={v => setProfile(p => ({ ...p, first_name: v }))} />
-              <Field label="Last name" value={profile.last_name} onChange={v => setProfile(p => ({ ...p, last_name: v }))} />
+              <Field label="Full name" value={profile.fullName} onChange={v => setProfile(p => ({ ...p, fullName: v }))} />
               <Field label="Phone" value={profile.phone} onChange={v => setProfile(p => ({ ...p, phone: v }))} type="tel" />
-              <Field label="Email" value={profile.contact_email} onChange={v => setProfile(p => ({ ...p, contact_email: v }))} type="email" />
             </section>
 
             {/* Links */}
@@ -276,15 +233,9 @@ export function YourDataPage() {
               {profile.links.map(link => (
                 <div key={link.id} className="flex items-center gap-2">
                   <Input
-                    placeholder="Label (e.g. LinkedIn)"
-                    value={link.label}
-                    onChange={e => updateLink(link.id, 'label', e.target.value)}
-                    className="w-36 shrink-0"
-                  />
-                  <Input
-                    placeholder="URL"
+                    placeholder="https://linkedin.com/in/..."
                     value={link.url}
-                    onChange={e => updateLink(link.id, 'url', e.target.value)}
+                    onChange={e => updateLink(link.id, e.target.value)}
                     className="flex-1"
                   />
                   <CopyButton value={link.url} />
@@ -312,10 +263,10 @@ export function YourDataPage() {
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">CV / Resume</h2>
 
-              {profile.cv_file_path ? (
+              {hasCv ? (
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/20">
                   <FileText size={20} className="text-muted-foreground shrink-0" />
-                  <span className="text-sm text-foreground truncate flex-1">{profile.cv_file_name}</span>
+                  <span className="text-sm text-foreground truncate flex-1">{profile.cvName}</span>
                   <button
                     onClick={previewCv}
                     className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -352,7 +303,7 @@ export function YourDataPage() {
                     <Upload size={24} className="text-muted-foreground" />
                   )}
                   <p className="text-sm text-muted-foreground">
-                    {cvUploading ? 'Uploading…' : 'Click to upload PDF (max 5 MB)'}
+                    {cvUploading ? 'Uploading…' : 'Click to upload PDF, DOC or DOCX (max 5 MB)'}
                   </p>
                 </div>
               )}
@@ -360,12 +311,12 @@ export function YourDataPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 className="hidden"
                 onChange={handleCvUpload}
               />
 
-              {profile.cv_file_path && (
+              {hasCv && (
                 <Button
                   variant="outline"
                   size="sm"
