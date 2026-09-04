@@ -6,7 +6,7 @@ A web app for tracking job applications — statuses, activity charts, and stats
 
 ## Features
 
-- Email & Google OAuth authentication with password reset
+- Email authentication with password reset
 - Dashboard with application stats and charts
 - Add, edit, and delete job applications
 - Filter applications by status
@@ -16,7 +16,7 @@ A web app for tracking job applications — statuses, activity charts, and stats
 ## Tech Stack
 
 - React 19, TypeScript, Vite
-- Supabase (auth + database)
+- Custom Express backend (auth, profile, CV storage via R2)
 - Tailwind CSS, shadcn/ui
 - Recharts, React Query, React Hook Form, Zod
 
@@ -25,7 +25,7 @@ A web app for tracking job applications — statuses, activity charts, and stats
 ### Prerequisites
 
 - Node.js 18+
-- A [Supabase](https://supabase.com) project
+- The [backend](https://github.com/senezz/job-application-tracker-backend) running locally
 
 ### 1. Clone the repo
 
@@ -49,11 +49,8 @@ cp .env.example .env
 Fill in `.env`:
 
 ```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_API_URL=http://localhost:4000
 ```
-
-Both values are in **Supabase → Project Settings → API**.
 
 ### 4. Run the dev server
 
