@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, LogOut, User, PanelLeftClose, PanelLeftOpen, UserCircle, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { supabase } from '../../lib/supabase';
+import { clearToken } from '../../lib/api/client';
+import { getCurrentUser } from '../../lib/api/auth';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -11,19 +12,18 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [email, setEmail] = useState('');
   const [avatarError, setAvatarError] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    getCurrentUser().then(u => setEmail(u.email)).catch(() => setEmail(''));
   }, []);
 
   // Close mobile sidebar on route change
@@ -31,15 +31,13 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const handleSignOut = () => {
+    clearToken();
     navigate('/login');
   };
 
-  const email = user?.email ?? '';
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  const provider = user?.app_metadata?.provider;
-  const providerLabel = provider === 'google' ? 'via Google' : 'via Email';
+  const avatarUrl: string | undefined = undefined;
+  const providerLabel = 'via Email';
 
   const navItems = [
     { icon: <LayoutDashboard size={16} />, label: 'Dashboard', path: '/dashboard' },
