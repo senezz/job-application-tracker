@@ -29,3 +29,17 @@ export async function register(email: string, password: string): Promise<void> {
 export function getCurrentUser(): Promise<CurrentUser> {
   return apiFetch<CurrentUser>('/auth/me');
 }
+
+export function forgotPassword(email: string): Promise<void> {
+  return apiFetch<void>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(token: string, newPassword: string): Promise<void> {
+  return apiFetch<void>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
